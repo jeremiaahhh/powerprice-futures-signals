@@ -1,5 +1,5 @@
 """
-Tail Risk Engine — composite risk scorer for CFD rebound signals.
+Tail Risk Engine — composite risk scorer for Futures rebound signals.
 
 Blocks entries when:
   - Price too deep negative (< max_negative_price threshold)

@@ -39,7 +39,7 @@ LaunchAgents run under your user account, survive sleep, and restart automatical
 ### Install
 
 ```bash
-cd /path/to/powerprice-cfd-signals
+cd /path/to/powerprice-futures-signals
 
 # Create venv if needed
 python3 -m venv .venv

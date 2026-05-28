@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Threshold grid search: maximize profit factor after CFD costs.
+Threshold grid search: maximize profit factor after Futures costs.
 
 Grid:
   p_negative : 0.50 – 0.90  (step 0.05)  →  9 values
@@ -9,7 +9,7 @@ Grid:
 Total: 432 combinations.
 
 Metric: profit_factor = gross_wins / abs(gross_losses)
-        after deducting actual CFD costs per trade.
+        after deducting actual Futures costs per trade.
 """
 from __future__ import annotations
 
@@ -106,7 +106,7 @@ p_neg_arr    = preds["p_negative"].values.astype(float)
 p_reb_arr    = preds["p_rebound"].values.astype(float)
 pred_p_arr   = preds["predicted_price"].values.astype(float)
 
-# CFD cost constants (mirrors CFDCostModel defaults)
+# Futures cost constants (mirrors CFDCostModel defaults)
 _SPREAD      = 5.0   # EUR/MWh round-trip
 _SLIPPAGE    = 3.0
 _MARKUP      = 1.0
@@ -248,7 +248,7 @@ results_df = pd.DataFrame(results).sort_values("profit_factor", ascending=False)
 
 # Format for display
 print("\n" + "=" * 90)
-print("TOP 20 THRESHOLD COMBINATIONS  —  ranked by Profit Factor after CFD costs")
+print("TOP 20 THRESHOLD COMBINATIONS  —  ranked by Profit Factor after Futures costs")
 print("=" * 90)
 print(f"{'Rank':>4}  {'p_neg':>6}  {'p_reb':>6}  {'net_edge':>9}  "
       f"{'PF':>6}  {'WinRate':>8}  {'Sharpe':>7}  {'AvgTrade':>9}  "

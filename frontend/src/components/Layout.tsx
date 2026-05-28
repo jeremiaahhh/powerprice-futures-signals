@@ -12,7 +12,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { code: 'OVR',  label: 'Overview',       path: '/' },
-  { code: 'SGNL', label: 'CFD Signal',     path: '/signal' },
+  { code: 'SGNL', label: 'Futures Signal',     path: '/signal' },
   { code: 'FCST', label: 'Forecast',       path: '/forecast' },
   { code: 'COST', label: 'Cost Simulator', path: '/costs' },
   { code: 'BCKT', label: 'Backtest',       path: '/backtest' },
@@ -98,7 +98,7 @@ export default function Layout() {
       {/* ============================================================== */}
       <div className="flex-shrink-0 h-6 flex items-center px-3 bg-amber/10 border-b border-amber/30 text-3xs">
         <span className="text-amber font-semibold tracking-wider uppercase">
-          NOTICE — Signal Only. Not financial advice. CFD trading involves substantial risk of loss.
+          NOTICE — Signal Only. Not financial advice. Futures trading involves substantial risk of loss.
         </span>
       </div>
 

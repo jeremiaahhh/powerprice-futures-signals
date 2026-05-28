@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.db.session import get_db
-from app.db.models import CFDSignal
+from app.db.models import FuturesSignal
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -69,7 +69,7 @@ def _compute_loss_clusters() -> Dict[str, Any]:
         cur.execute(
             """
             SELECT timestamp, action, current_price
-            FROM cfd_signals
+            FROM futures_signals
             WHERE action = ANY(%s)
               AND timestamp >= %s
             ORDER BY timestamp ASC
@@ -236,13 +236,13 @@ async def get_loss_clusters() -> Dict[str, Any]:
 async def get_regime_performance(
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    # Load all cfd_signals
-    stmt = select(CFDSignal).order_by(CFDSignal.timestamp.asc())
+    # Load all futures_signals
+    stmt = select(FuturesSignal).order_by(FuturesSignal.timestamp.asc())
     result = await db.execute(stmt)
     signals = result.scalars().all()
 
     if not signals:
-        raise HTTPException(status_code=503, detail="No CFD signals found in database")
+        raise HTTPException(status_code=503, detail="No Futures signals found in database")
 
     # Try loading regime snapshots
     regime_map: Dict[datetime, str] = {}

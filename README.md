@@ -1,7 +1,7 @@
-# PowerPrice CFD Signals
+# PowerPrice Futures Signals
 
 A research platform that turns German day-ahead electricity market data into
-directional CFD signals. Ingests live data from SMARD, ENTSO-E, and
+directional Futures signals. Ingests live data from SMARD, ENTSO-E, and
 Open-Meteo, runs a feature pipeline, scores it through gradient-boosted
 models, and emits typed signals (`ENTER`, `WATCH`, `BLOCKED`) with full
 audit trail, paper-trading P&L, and a tail-risk gate.
@@ -23,7 +23,7 @@ live without leaking into the operator's signal feed.
 
 > **SIGNAL ONLY.** No broker integration, no order execution, no managed
 > money. Outputs are research artefacts derived from publicly available
-> market data. CFD trading is leveraged and can result in losses exceeding
+> market data. Futures trading is leveraged and can result in losses exceeding
 > deposits. Nothing in this repository is financial advice.
 
 ---
@@ -39,7 +39,7 @@ model:
 
 - A **typed signal contract** (`ENTER`, `WATCH`, `BLOCKED`, `NO_SIGNAL`)
   with reasons surfaced to the UI — no opaque scores.
-- A **CFD cost model** baked into the entry threshold: spread, slippage,
+- A **Futures cost model** baked into the entry threshold: spread, slippage,
   overnight financing, and a configurable safety buffer have to be cleared
   before a signal is even considered.
 - A **tail-risk gate** that suppresses signals during negative-price runs,
@@ -66,7 +66,7 @@ The model itself is one swappable component. The rest is the project.
 | --- | --- | --- |
 | Architecture | Layered FastAPI backend: routers → services → ML/feature/runtime modules → repositories. All config flows through a single `pydantic-settings` `Settings` object. | Routes stay thin; the same service objects are reusable from Celery tasks, the signal daemon, scripts, and tests. |
 | Signal engine | Threshold rules over `p_rebound`, `net_edge`, and `tail_risk_score`. Every signal records the reasons it was emitted *or* blocked. | A signal feed without reasons is unreviewable. This one is. |
-| Cost model | Per-signal CFD cost is computed from spread + slippage + overnight financing × holding hours, then compared against a configurable `MIN_EDGE_THRESHOLD`. | Profitable in spreadsheet ≠ profitable after frictions. The threshold is the friction. |
+| Cost model | Per-signal Futures cost is computed from spread + slippage + overnight financing × holding hours, then compared against a configurable `MIN_EDGE_THRESHOLD`. | Profitable in spreadsheet ≠ profitable after frictions. The threshold is the friction. |
 | Tail-risk gate | Rolling volatility window, negative-price streak detector, gap-size monitor, and an aggregate score. Above `MAX_TAIL_RISK_SCORE`, signals are blocked. | The drawdowns that kill systems happen on a handful of days. The gate is for those days. |
 | Adaptive retraining | Rolling 365-day training window, drift detection on a 6-hour interval, and a signal-mode escalator (`NORMAL → WATCH_ONLY`) keyed off rolling profit-factor. | The model degrades silently; the system shouldn't. |
 | Shadow mode | A parallel pipeline scores live data against a candidate model, writes results to a separate table, and computes an out-of-sample P&L without emitting signals. | New models earn promotion on real data, not just backtests. |
@@ -108,7 +108,7 @@ signal engine.
 
 ```
 backend/app/
-  api/routes/      thin HTTP adapters (cfd, forecast, backtest, paper,
+  api/routes/      thin HTTP adapters (futures, forecast, backtest, paper,
                    battery, daemon, telegram, shadow, drift, …)
   core/            settings (pydantic), logging (structlog)
   db/              SQLAlchemy 2.0 async + sync engines, ORM models
@@ -116,7 +116,7 @@ backend/app/
   features/        feature engineering + battery features
   ml/              gradient-boosted price + spike + regime models
   signals/         signal engine, threshold rules, reasons
-  risk/, guards/   CFD cost model + tail-risk gate
+  risk/, guards/   Futures cost model + tail-risk gate
   paper/           paper-trade ledger + P&L
   backtest/        walk-forward backtester (shared cost model)
   regime/          regime classifier + transition detection
@@ -129,7 +129,7 @@ backend/app/
 
 ```
 frontend/src/
-  pages/           Overview, CFDSignal, Forecast, CostSimulator, Backtest,
+  pages/           Overview, FuturesSignal, Forecast, CostSimulator, Backtest,
                    PaperTrading, DataQuality, BatteryIntelligence,
                    TailRiskMonitor, SignalStability, DaemonStatus,
                    TelegramSettings, ShadowMode, AutoRetraining, DriftMonitor
@@ -161,7 +161,7 @@ Then in the browser at **http://localhost:3000**:
 
 1. **Overview** — current signal, live price ticker, daemon status, latest
    shadow-mode entries.
-2. **CFD Signal** — the active signal with its full reason set
+2. **Futures Signal** — the active signal with its full reason set
    (`p_rebound`, `net_edge`, `tail_risk_score`, blocked-by-X), the cost
    breakdown, and the suggested entry / target window.
 3. **Cost Simulator** — change spread, overnight rate, holding hours, and
@@ -243,8 +243,8 @@ All endpoints documented interactively at http://localhost:8000/docs.
 | Method | Path                                | Description                                   |
 | ------ | ----------------------------------- | --------------------------------------------- |
 | GET    | `/health`                           | Service liveness                              |
-| GET    | `/api/cfd/signal/current`           | Currently active signal with reasons          |
-| GET    | `/api/cfd/signal/history`           | Past signals (paginated, filterable)          |
+| GET    | `/api/futures/signal/current`           | Currently active signal with reasons          |
+| GET    | `/api/futures/signal/history`           | Past signals (paginated, filterable)          |
 | GET    | `/api/forecast/next-hours`          | Price forecast with confidence intervals      |
 | GET    | `/api/backtest/runs`                | Walk-forward backtest results                 |
 | POST   | `/api/backtest/run`                 | Trigger a new backtest run                    |
@@ -336,13 +336,13 @@ is required for live data.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `CFD_AVG_SPREAD_EUR_MWH` | `5.0` | |
-| `CFD_SLIPPAGE_EUR_MWH` | `3.0` | |
-| `CFD_OVERNIGHT_FEE_ANNUAL_PCT` | `8.0` | |
-| `CFD_SAFETY_BUFFER_EUR_MWH` | `5.0` | |
-| `CFD_MIN_EDGE_THRESHOLD` | `30.0` | Minimum net edge in EUR/MWh to emit |
-| `CFD_P_REBOUND_ENTRY` | `0.70` | Threshold for `ENTER` |
-| `CFD_P_REBOUND_WATCH` | `0.55` | Threshold for `WATCH` |
+| `FUTURES_AVG_SPREAD_EUR_MWH` | `5.0` | |
+| `FUTURES_SLIPPAGE_EUR_MWH` | `3.0` | |
+| `FUTURES_OVERNIGHT_FEE_ANNUAL_PCT` | `8.0` | |
+| `FUTURES_SAFETY_BUFFER_EUR_MWH` | `5.0` | |
+| `FUTURES_MIN_EDGE_THRESHOLD` | `30.0` | Minimum net edge in EUR/MWh to emit |
+| `FUTURES_P_REBOUND_ENTRY` | `0.70` | Threshold for `ENTER` |
+| `FUTURES_P_REBOUND_WATCH` | `0.55` | Threshold for `WATCH` |
 | `SIGNAL_MODE` | `NORMAL` | `NORMAL` or `WATCH_ONLY` |
 | `SHADOW_MODE_ENABLED` | `true` | |
 
@@ -425,7 +425,7 @@ pytest -q
 Coverage:
 
 - `tests/test_signal_engine.py` — threshold rules, reason ordering, blocked states
-- `tests/test_cfd_cost_model.py` — per-signal cost across spread / overnight / hold-hours
+- `tests/test_futures_cost_model.py` — per-signal cost across spread / overnight / hold-hours
 - `tests/test_daemon.py` — wall-clock jump, post-wake grace, consecutive-error tripwire
 - `tests/test_drift_detector.py` — drift trigger thresholds
 - `tests/test_backtest.py` — walk-forward correctness + cost-model parity with live
@@ -436,10 +436,10 @@ Coverage:
 ## Project structure
 
 ```
-powerprice-cfd-signals/
+powerprice-futures-signals/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/        FastAPI routers (cfd, forecast, paper, …)
+│   │   ├── api/routes/        FastAPI routers (futures, forecast, paper, …)
 │   │   ├── core/              config, logging
 │   │   ├── db/                SQLAlchemy models, sessions
 │   │   ├── data/              SMARD / ENTSO-E / Open-Meteo clients

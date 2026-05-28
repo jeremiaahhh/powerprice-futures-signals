@@ -1,5 +1,5 @@
 """
-Signal Generation Engine for German Electricity Price CFD Rebounds.
+Signal Generation Engine for German Electricity Price Futures Rebounds.
 
 SIGNAL ONLY – no live trade execution.
 
@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from app.cfd.cost_model import CFDCostModel, CostBreakdown
+from app.futures.cost_model import FuturesCostModel, CostBreakdown
 from app.core.logging import get_logger
 from app.risk.risk_engine import DataQualityResult, RiskAssessment, RiskEngine
 
@@ -63,7 +63,7 @@ class SignalAction(str, Enum):
 
 @dataclass
 class Signal:
-    """Fully-described CFD trading signal."""
+    """Fully-described Futures trading signal."""
 
     action: SignalAction
     confidence: float
@@ -73,7 +73,7 @@ class Signal:
     p_rebound: float
     expected_rebound_eur_mwh: float
     gross_edge: float
-    estimated_cfd_costs: float
+    estimated_futures_costs: float
     net_edge: float
     stop_loss: Optional[float]
     take_profit: Optional[float]
@@ -90,7 +90,7 @@ class Signal:
 
 class SignalEngine:
     """
-    Generates CFD trading signals for German electricity price rebounds.
+    Generates Futures trading signals for German electricity price rebounds.
 
     Entry logic is conservative: all conditions must pass before issuing
     ENTER_LONG_REBOUND_SIGNAL.  The engine transitions through:
@@ -127,7 +127,7 @@ class SignalEngine:
         "is_holiday",
     ]
 
-    def __init__(self, cost_model: CFDCostModel, risk_engine: RiskEngine) -> None:
+    def __init__(self, cost_model: FuturesCostModel, risk_engine: RiskEngine) -> None:
         self.cost_model = cost_model
         self.risk_engine = risk_engine
         logger.info(
@@ -192,7 +192,7 @@ class SignalEngine:
                 p_rebound=p_rebound,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=0.0,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=0.0,
                 stop_loss=None,
                 take_profit=None,
@@ -214,7 +214,7 @@ class SignalEngine:
                 p_rebound=p_rebound,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=0.0,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=0.0,
                 stop_loss=None,
                 take_profit=None,
@@ -241,7 +241,7 @@ class SignalEngine:
                         current_price, predicted_price, p_rebound
                     ),
                     gross_edge=0.0,
-                    estimated_cfd_costs=0.0,
+                    estimated_futures_costs=0.0,
                     net_edge=0.0,
                     stop_loss=None,
                     take_profit=None,
@@ -264,7 +264,7 @@ class SignalEngine:
                 p_rebound=p_rebound,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=0.0,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=0.0,
                 stop_loss=None,
                 take_profit=None,
@@ -312,7 +312,7 @@ class SignalEngine:
                 p_rebound=p_rebound,
                 expected_rebound_eur_mwh=expected_rebound,
                 gross_edge=expected_rebound,
-                estimated_cfd_costs=cost_breakdown.total_cost,
+                estimated_futures_costs=cost_breakdown.total_cost,
                 net_edge=cost_breakdown.net_edge,
                 stop_loss=None,
                 take_profit=None,
@@ -336,7 +336,7 @@ class SignalEngine:
                 p_rebound=p_rebound,
                 expected_rebound_eur_mwh=expected_rebound,
                 gross_edge=expected_rebound,
-                estimated_cfd_costs=cost_breakdown.total_cost,
+                estimated_futures_costs=cost_breakdown.total_cost,
                 net_edge=cost_breakdown.net_edge,
                 stop_loss=None,
                 take_profit=None,
@@ -385,7 +385,7 @@ class SignalEngine:
             p_rebound=p_rebound,
             expected_rebound_eur_mwh=expected_rebound,
             gross_edge=expected_rebound,
-            estimated_cfd_costs=cost_breakdown.total_cost,
+            estimated_futures_costs=cost_breakdown.total_cost,
             net_edge=cost_breakdown.net_edge,
             stop_loss=stop_loss,
             take_profit=take_profit,
@@ -450,7 +450,7 @@ class SignalEngine:
                 p_rebound=0.0,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=pnl_gross,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=pnl_gross,
                 stop_loss=stop_loss,
                 take_profit=take_profit,
@@ -477,7 +477,7 @@ class SignalEngine:
                 p_rebound=0.0,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=pnl_gross,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=pnl_gross,
                 stop_loss=stop_loss,
                 take_profit=take_profit,
@@ -508,7 +508,7 @@ class SignalEngine:
                 p_rebound=0.0,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=pnl_gross,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=pnl_gross,
                 stop_loss=stop_loss,
                 take_profit=take_profit,
@@ -539,7 +539,7 @@ class SignalEngine:
                 p_rebound=0.0,
                 expected_rebound_eur_mwh=0.0,
                 gross_edge=pnl_gross,
-                estimated_cfd_costs=0.0,
+                estimated_futures_costs=0.0,
                 net_edge=pnl_gross,
                 stop_loss=stop_loss,
                 take_profit=take_profit,
@@ -561,7 +561,7 @@ class SignalEngine:
             p_rebound=0.0,
             expected_rebound_eur_mwh=0.0,
             gross_edge=pnl_gross,
-            estimated_cfd_costs=0.0,
+            estimated_futures_costs=0.0,
             net_edge=pnl_gross,
             stop_loss=stop_loss,
             take_profit=take_profit,

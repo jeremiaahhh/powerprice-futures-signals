@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.db.base import Base
 from app.db.session import async_engine, get_db
-from app.api.routes import health, data, forecast, cfd, backtest, paper, regime, analytics, shadow, battery, risk
+from app.api.routes import health, data, forecast, futures, backtest, paper, regime, analytics, shadow, battery, risk
 
 # Optional new routers (loaded when modules are available)
 try:
@@ -119,15 +119,15 @@ async def _job_ingest_data() -> None:
 
 
 async def _job_generate_signal() -> None:
-    """Every 15 min: generate signal and persist to cfd_signals table."""
+    """Every 15 min: generate signal and persist to futures_signals table."""
     try:
-        from app.api.routes.cfd import _generate_signal
-        from app.db.models import CFDSignal
+        from app.api.routes.futures import _generate_signal
+        from app.db.models import FuturesSignal
         from app.db.session import get_db
 
         async for db in get_db():
             sig = await _generate_signal(db, include_explanation=False)
-            record = CFDSignal(
+            record = FuturesSignal(
                 timestamp=sig.timestamp,
                 action=sig.action,
                 confidence=sig.confidence,
@@ -137,7 +137,7 @@ async def _job_generate_signal() -> None:
                 p_rebound=sig.p_rebound,
                 expected_rebound_eur_mwh=sig.expected_rebound_eur_mwh,
                 gross_edge=sig.gross_edge,
-                estimated_cfd_costs=sig.estimated_cfd_costs,
+                estimated_futures_costs=sig.estimated_futures_costs,
                 net_edge=sig.net_edge,
                 stop_loss=sig.stop_loss,
                 take_profit=sig.take_profit,
@@ -279,7 +279,7 @@ async def _run_scheduler() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting PowerPrice CFD Signals API", extra={"env": settings.app_env})
+    logger.info("Starting PowerPrice Futures Signals API", extra={"env": settings.app_env})
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created/verified")
@@ -326,8 +326,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="PowerPrice CFD Signals",
-    description="Data-driven signal platform for German electricity price CFD trading. SIGNAL ONLY - no live execution.",
+    title="PowerPrice Futures Signals",
+    description="Data-driven signal platform for German electricity price Futures trading. SIGNAL ONLY - no live execution.",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -349,7 +349,7 @@ app.mount("/metrics", metrics_app)
 app.include_router(health.router, tags=["Health"])
 app.include_router(data.router, prefix="/data", tags=["Data"])
 app.include_router(forecast.router, prefix="/forecast", tags=["Forecast"])
-app.include_router(cfd.router, prefix="/cfd", tags=["CFD"])
+app.include_router(futures.router, prefix="/futures", tags=["Futures"])
 app.include_router(backtest.router, prefix="/backtest", tags=["Backtest"])
 app.include_router(paper.router, prefix="/paper", tags=["Paper Trading"])
 app.include_router(regime.router, prefix="/regime", tags=["Regime"])

@@ -259,16 +259,16 @@ function normaliseBacktestResult(r: any): BacktestMetrics {
 
 // ─── API Functions ────────────────────────────────────────────────────────────
 
-/** Get the latest CFD signal */
+/** Get the latest Futures signal */
 export async function getSignal(): Promise<Signal> {
-  const res = await http.get<any>('/cfd/signal')
+  const res = await http.get<any>('/futures/signal')
   return normaliseSignal(res.data)
 }
 
 /** Get signal history (last N signals) */
 export async function getSignalHistory(limit = 20): Promise<Signal[]> {
   try {
-    const res = await http.get<any[]>('/cfd/signal/history', { params: { limit } })
+    const res = await http.get<any[]>('/futures/signal/history', { params: { limit } })
     return res.data.map(normaliseSignal)
   } catch {
     return []
@@ -293,7 +293,7 @@ export async function getPriceHistory(hours = 24): Promise<PriceHistory> {
 
 /** Get current cost model config */
 export async function getCostModel(): Promise<CostModel> {
-  const res = await http.get<any>('/cfd/cost-model')
+  const res = await http.get<any>('/futures/cost-model')
   const d = res.data
   return {
     avg_spread: d.avg_spread_eur_mwh ?? 5,
@@ -317,7 +317,7 @@ export async function updateCostConfig(config: CostConfig): Promise<CostModel> {
     broker_markup_eur_mwh: config.broker_markup,
     safety_buffer_eur_mwh: config.safety_buffer,
   }
-  const res = await http.post<any>('/cfd/cost-model', payload)
+  const res = await http.post<any>('/futures/cost-model', payload)
   return getCostModel()
 }
 

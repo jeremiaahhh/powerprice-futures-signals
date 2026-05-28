@@ -1,8 +1,8 @@
 """
-Paper Trading Service for CFD Signal Simulation.
+Paper Trading Service for Futures Signal Simulation.
 
 IMPORTANT: NO real orders are placed.  This module simulates paper-trading
-based on CFD signals and maintains a virtual journal of positions and P&L.
+based on Futures signals and maintains a virtual journal of positions and P&L.
 
 Lifecycle:
   1. Signal pipeline calls ``process_signal(signal)`` whenever a new
@@ -21,7 +21,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cfd.cost_model import CFDCostModel
+from app.futures.cost_model import FuturesCostModel
 from app.core.logging import get_logger
 from app.db.models import PaperPosition
 from app.signals.signal_engine import Signal, SignalAction
@@ -38,7 +38,7 @@ DEFAULT_NOTIONAL_MWH: float = 1.0
 
 class PaperTradingService:
     """
-    Simulates paper trading based on CFD signals.
+    Simulates paper trading based on Futures signals.
 
     All operations are async and persist state to the provided database
     session.  The service tracks:
@@ -49,7 +49,7 @@ class PaperTradingService:
 
     def __init__(
         self,
-        cost_model: CFDCostModel,
+        cost_model: FuturesCostModel,
         db: AsyncSession,
         notional_mwh: float = DEFAULT_NOTIONAL_MWH,
     ) -> None:
@@ -186,7 +186,7 @@ class PaperTradingService:
                 current_time=current_time,
             )
 
-            pnl_gross, cfd_costs, net_pnl = self._calculate_pnl(
+            pnl_gross, futures_costs, net_pnl = self._calculate_pnl(
                 entry_price=closed_pos.entry_price,
                 exit_price=current_price,
                 notional_mwh=closed_pos.notional_size_mwh,
@@ -204,7 +204,7 @@ class PaperTradingService:
                     "exit_price": current_price,
                     "exit_reason": exit_reason,
                     "pnl_gross_eur": round(pnl_gross, 4),
-                    "cfd_costs_eur": round(cfd_costs, 4),
+                    "futures_costs_eur": round(futures_costs, 4),
                     "net_pnl_eur": round(net_pnl, 4),
                     "exit_timestamp": current_time.isoformat(),
                 }
@@ -261,13 +261,13 @@ class PaperTradingService:
                 "avg_net_pnl_eur": 0.0,
                 "best_trade_eur": 0.0,
                 "worst_trade_eur": 0.0,
-                "total_cfd_costs_eur": 0.0,
+                "total_futures_costs_eur": 0.0,
                 "daily_pnl_eur": round(self._daily_pnl_eur, 4),
             }
 
         net_pnls = [p.net_pnl_eur for p in closed_positions if p.net_pnl_eur is not None]
         total_costs = sum(
-            p.cfd_costs_eur for p in closed_positions if p.cfd_costs_eur is not None
+            p.futures_costs_eur for p in closed_positions if p.futures_costs_eur is not None
         )
         winning = [p for p in net_pnls if p > 0]
         losing = [p for p in net_pnls if p <= 0]
@@ -285,7 +285,7 @@ class PaperTradingService:
             ),
             "best_trade_eur": round(max(net_pnls, default=0.0), 4),
             "worst_trade_eur": round(min(net_pnls, default=0.0), 4),
-            "total_cfd_costs_eur": round(total_costs, 4),
+            "total_futures_costs_eur": round(total_costs, 4),
             "daily_pnl_eur": round(self._daily_pnl_eur, 4),
         }
 
@@ -302,12 +302,12 @@ class PaperTradingService:
         is_weekend: bool = False,
     ) -> Tuple[float, float, float]:
         """
-        Compute gross P&L, CFD cost deductions, and net P&L.
+        Compute gross P&L, Futures cost deductions, and net P&L.
 
-        For a long CFD position:
+        For a long Futures position:
             pnl_gross = (exit_price - entry_price) * notional_mwh
-            cfd_costs = cost_model.total_cost * notional_mwh
-            net_pnl   = pnl_gross - cfd_costs
+            futures_costs = cost_model.total_cost * notional_mwh
+            net_pnl   = pnl_gross - futures_costs
 
         Args:
             entry_price: Position entry price in EUR/MWh.
@@ -317,7 +317,7 @@ class PaperTradingService:
             is_weekend: Whether the position was held over a weekend.
 
         Returns:
-            Tuple (pnl_gross_eur, cfd_costs_eur, net_pnl_eur).
+            Tuple (pnl_gross_eur, futures_costs_eur, net_pnl_eur).
         """
         pnl_gross = (exit_price - entry_price) * notional_mwh
 
@@ -328,12 +328,12 @@ class PaperTradingService:
             is_weekend=is_weekend,
             notional_price_eur_mwh=abs(entry_price) or 100.0,
         )
-        cfd_costs = cost_breakdown.total_cost * notional_mwh
-        net_pnl = pnl_gross - cfd_costs
+        futures_costs = cost_breakdown.total_cost * notional_mwh
+        net_pnl = pnl_gross - futures_costs
 
         return (
             round(pnl_gross, 4),
-            round(cfd_costs, 4),
+            round(futures_costs, 4),
             round(net_pnl, 4),
         )
 
@@ -365,7 +365,7 @@ class PaperTradingService:
         )
         is_weekend = _is_weekend(current_time)
 
-        pnl_gross, cfd_costs, net_pnl = self._calculate_pnl(
+        pnl_gross, futures_costs, net_pnl = self._calculate_pnl(
             entry_price=position.entry_price,
             exit_price=exit_price,
             notional_mwh=position.notional_size_mwh,
@@ -377,7 +377,7 @@ class PaperTradingService:
         position.exit_price = exit_price
         position.exit_timestamp = current_time
         position.pnl_eur = pnl_gross
-        position.cfd_costs_eur = cfd_costs
+        position.futures_costs_eur = futures_costs
         position.net_pnl_eur = net_pnl
         position.exit_reason = exit_reason
         position.updated_at = current_time
@@ -391,7 +391,7 @@ class PaperTradingService:
                 "exit_price": exit_price,
                 "exit_reason": exit_reason,
                 "pnl_gross": pnl_gross,
-                "cfd_costs": cfd_costs,
+                "futures_costs": futures_costs,
                 "net_pnl": net_pnl,
                 "holding_hours": round(holding_hours, 2),
             },

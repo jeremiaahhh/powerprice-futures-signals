@@ -2,7 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Overview from './pages/Overview'
-import CFDSignal from './pages/CFDSignal'
+import FuturesSignal from './pages/FuturesSignal'
 import Forecast from './pages/Forecast'
 import CostSimulator from './pages/CostSimulator'
 import Backtest from './pages/Backtest'
@@ -22,7 +22,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Overview />} />
-        <Route path="signal" element={<CFDSignal />} />
+        <Route path="signal" element={<FuturesSignal />} />
         <Route path="forecast" element={<Forecast />} />
         <Route path="costs" element={<CostSimulator />} />
         <Route path="backtest" element={<Backtest />} />

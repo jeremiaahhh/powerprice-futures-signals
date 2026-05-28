@@ -154,19 +154,19 @@ async def get_blocked_trades(
     db: AsyncSession = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     try:
-        from app.db.models import CFDSignal
+        from app.db.models import FuturesSignal
         _BLOCKED_ACTIONS = [
             "TAIL_RISK_BLOCKED", "GAP_RISK_BLOCKED",
             "EXTREME_VOLATILITY_BLOCKED", "DATA_QUALITY_BLOCKED", "RISK_BLOCKED",
         ]
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         stmt = (
-            select(CFDSignal)
+            select(FuturesSignal)
             .where(
-                CFDSignal.action.in_(_BLOCKED_ACTIONS),
-                CFDSignal.timestamp >= cutoff,
+                FuturesSignal.action.in_(_BLOCKED_ACTIONS),
+                FuturesSignal.timestamp >= cutoff,
             )
-            .order_by(CFDSignal.timestamp.desc())
+            .order_by(FuturesSignal.timestamp.desc())
             .limit(100)
         )
         rows = (await db.execute(stmt)).scalars().all()

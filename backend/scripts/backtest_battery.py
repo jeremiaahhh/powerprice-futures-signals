@@ -225,7 +225,7 @@ def metrics(trades: list[float]) -> dict:
 
 def main():
     print("\n" + "=" * 70)
-    print("  PowerPrice CFD Signals — Battery Feature Backtest Comparison")
+    print("  PowerPrice Futures Signals — Battery Feature Backtest Comparison")
     print("=" * 70)
 
     df = load_data()

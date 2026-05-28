@@ -189,7 +189,7 @@ async def fetch_recent(hours_back: int = 48) -> pd.DataFrame:
     start = end - timedelta(hours=hours_back + 1)
 
     async with httpx.AsyncClient(
-        headers={"Accept": "application/json", "User-Agent": "PowerPriceCFD/1.0"},
+        headers={"Accept": "application/json", "User-Agent": "PowerPriceFutures/1.0"},
         follow_redirects=True,
     ) as client:
         results = await asyncio.gather(

@@ -48,7 +48,7 @@ class ReboundClassifier:
 
     Only rows where ``price_eur_mwh <= near_negative_threshold`` contribute
     to training.  This focuses the classifier on the specific regime where
-    CFD buy signals are most actionable.
+    Futures buy signals are most actionable.
 
     Parameters
     ----------

@@ -1,5 +1,5 @@
 """
-Celery tasks for PowerPrice CFD Signals.
+Celery tasks for PowerPrice Futures Signals.
 
 All tasks use a synchronous SQLAlchemy session (psycopg2) because Celery
 workers run synchronously; the async engine is only used by the FastAPI app.
@@ -205,7 +205,7 @@ def ingest_data(self: Task, hours_back: int = 48) -> Dict[str, Any]:
 )
 def generate_and_cache_signal(self: Task) -> Dict[str, Any]:
     """
-    Generate the current CFD signal, cache the result in Redis, and persist
+    Generate the current Futures signal, cache the result in Redis, and persist
     the signal record to the database.
 
     The cached signal is stored under the key ``signal:latest`` with a TTL
@@ -214,7 +214,7 @@ def generate_and_cache_signal(self: Task) -> Dict[str, Any]:
     import asyncio
     import numpy as np
     import pandas as pd
-    from app.db.models import HourlyPrice, CFDSignal
+    from app.db.models import HourlyPrice, FuturesSignal
     from app.api.schemas import SignalAction, CostModelConfig
 
     logger.info("Task generate_and_cache_signal started")
@@ -343,11 +343,11 @@ def generate_and_cache_signal(self: Task) -> Dict[str, Any]:
 
             # Edge calculation
             cost_model = CostModelConfig(
-                avg_spread_eur_mwh=settings.cfd_avg_spread_eur_mwh,
-                slippage_eur_mwh=settings.cfd_slippage_eur_mwh,
-                broker_markup_eur_mwh=settings.cfd_broker_markup_eur_mwh,
-                safety_buffer_eur_mwh=settings.cfd_safety_buffer_eur_mwh,
-                min_edge_threshold=settings.cfd_min_edge_threshold,
+                avg_spread_eur_mwh=settings.futures_avg_spread_eur_mwh,
+                slippage_eur_mwh=settings.futures_slippage_eur_mwh,
+                broker_markup_eur_mwh=settings.futures_broker_markup_eur_mwh,
+                safety_buffer_eur_mwh=settings.futures_safety_buffer_eur_mwh,
+                min_edge_threshold=settings.futures_min_edge_threshold,
             )
             total_cost = (
                 cost_model.avg_spread_eur_mwh
@@ -367,7 +367,7 @@ def generate_and_cache_signal(self: Task) -> Dict[str, Any]:
                 action = SignalAction.RISK_BLOCKED
                 reason = f"Max open positions reached ({open_positions})"
             elif (
-                net_edge >= settings.cfd_min_edge_threshold
+                net_edge >= settings.futures_min_edge_threshold
                 and p_rebound >= settings.min_confidence_threshold
             ):
                 action = SignalAction.ENTER_LONG_REBOUND_SIGNAL
@@ -397,7 +397,7 @@ def generate_and_cache_signal(self: Task) -> Dict[str, Any]:
                 predicted_price=predicted_price,
                 net_edge=net_edge,
                 gross_edge=gross_edge,
-                estimated_cfd_costs=total_cost,
+                estimated_futures_costs=total_cost,
             )
 
             logger.info(
@@ -442,14 +442,14 @@ def _save_and_cache_signal(
     predicted_price: Optional[float] = None,
     net_edge: Optional[float] = None,
     gross_edge: Optional[float] = None,
-    estimated_cfd_costs: Optional[float] = None,
+    estimated_futures_costs: Optional[float] = None,
 ) -> None:
     """Persist signal to DB and cache in Redis."""
-    from app.db.models import CFDSignal
+    from app.db.models import FuturesSignal
 
     # Save to DB
     try:
-        signal_record = CFDSignal(
+        signal_record = FuturesSignal(
             timestamp=signal_ts,
             action=action.value if hasattr(action, "value") else str(action),
             confidence=p_rebound or 0.0,
@@ -459,7 +459,7 @@ def _save_and_cache_signal(
             p_rebound=p_rebound,
             net_edge=net_edge,
             gross_edge=gross_edge,
-            estimated_cfd_costs=estimated_cfd_costs,
+            estimated_futures_costs=estimated_futures_costs,
             reason=reason,
         )
         session.add(signal_record)
@@ -692,10 +692,10 @@ def check_paper_positions(self: Task) -> Dict[str, Any]:
                 return {"exits": [], "skipped": "no open positions"}
 
             cost_model = CostModelConfig(
-                avg_spread_eur_mwh=settings.cfd_avg_spread_eur_mwh,
-                slippage_eur_mwh=settings.cfd_slippage_eur_mwh,
-                broker_markup_eur_mwh=settings.cfd_broker_markup_eur_mwh,
-                safety_buffer_eur_mwh=settings.cfd_safety_buffer_eur_mwh,
+                avg_spread_eur_mwh=settings.futures_avg_spread_eur_mwh,
+                slippage_eur_mwh=settings.futures_slippage_eur_mwh,
+                broker_markup_eur_mwh=settings.futures_broker_markup_eur_mwh,
+                safety_buffer_eur_mwh=settings.futures_safety_buffer_eur_mwh,
             )
             total_cost_per_mwh = (
                 cost_model.avg_spread_eur_mwh
@@ -726,14 +726,14 @@ def check_paper_positions(self: Task) -> Dict[str, Any]:
 
                 if should_exit:
                     pnl_gross = (current_price - pos.entry_price) * pos.notional_size_mwh
-                    cfd_costs = total_cost_per_mwh * pos.notional_size_mwh
-                    net_pnl = pnl_gross - cfd_costs
+                    futures_costs = total_cost_per_mwh * pos.notional_size_mwh
+                    net_pnl = pnl_gross - futures_costs
 
                     pos.status = "closed"
                     pos.exit_price = current_price
                     pos.exit_timestamp = now
                     pos.pnl_eur = round(pnl_gross, 4)
-                    pos.cfd_costs_eur = round(cfd_costs, 4)
+                    pos.futures_costs_eur = round(futures_costs, 4)
                     pos.net_pnl_eur = round(net_pnl, 4)
                     pos.exit_reason = exit_reason
                     pos.updated_at = now

@@ -1,5 +1,5 @@
 """
-Risk Management Engine for CFD Signal Generation.
+Risk Management Engine for Futures Signal Generation.
 
 All risk checks are defensive: any single blocking check prevents a trade
 signal from being issued.  Non-blocking issues surface as warnings that are
@@ -95,7 +95,7 @@ class RiskConfig(BaseModel):
 
 class RiskEngine:
     """
-    Risk management for CFD signal generation.
+    Risk management for Futures signal generation.
 
     Each ``_check_*`` method returns a ``(is_blocking, Optional[message])``
     tuple.  If ``is_blocking`` is True the message is added to
@@ -146,7 +146,7 @@ class RiskEngine:
 
         Args:
             features: Current feature vector (pd.Series from feature pipeline).
-            cost_breakdown: Output of ``CFDCostModel.calculate_net_edge``.
+            cost_breakdown: Output of ``FuturesCostModel.calculate_net_edge``.
             p_negative: Model probability that current price is negative.
             p_rebound: Model probability of a price rebound.
             data_quality: Freshness / completeness result from data pipeline.

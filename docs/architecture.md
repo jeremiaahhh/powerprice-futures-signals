@@ -1,4 +1,4 @@
-# Architecture Documentation – PowerPrice CFD Signals
+# Architecture Documentation – PowerPrice Futures Signals
 
 ## Table of Contents
 
@@ -6,7 +6,7 @@
 2. [Component Descriptions](#2-component-descriptions)
 3. [Data Flow](#3-data-flow)
 4. [Signal Generation Logic](#4-signal-generation-logic)
-5. [CFD Cost Model](#5-cfd-cost-model)
+5. [Futures Cost Model](#5-futures-cost-model)
 6. [Backtesting Methodology](#6-backtesting-methodology)
 7. [Risk Management Rules](#7-risk-management-rules)
 
@@ -14,7 +14,7 @@
 
 ## 1. System Overview
 
-PowerPrice CFD Signals is a research platform that applies supervised machine learning to European electricity market data to produce directional trading signals on power-price CFDs. The system is composed of five logical layers:
+PowerPrice Futures Signals is a research platform that applies supervised machine learning to European electricity market data to produce directional trading signals on power-price CFDs. The system is composed of five logical layers:
 
 | Layer | Responsibility |
 |---|---|
@@ -207,20 +207,20 @@ NO_TRADE signals are stored to maintain a complete signal log but do not open pa
 
 ---
 
-## 5. CFD Cost Model
+## 5. Futures Cost Model
 
-The paper-trading engine simulates realistic CFD trading economics. All calculations are in EUR/MWh with a default lot size of 1 MWh.
+The paper-trading engine simulates realistic Futures trading economics. All calculations are in EUR/MWh with a default lot size of 1 MWh.
 
 ### 5.1 Components
 
 **Spread cost**
 
-The bid-ask spread represents the market-maker fee embedded in the CFD price. The platform models it as a fixed half-spread deducted on each side of the trade:
+The bid-ask spread represents the market-maker fee embedded in the Futures price. The platform models it as a fixed half-spread deducted on each side of the trade:
 
 ```
-spread_cost_entry = CFD_SPREAD_EUR_MWH / 2
-spread_cost_exit  = CFD_SPREAD_EUR_MWH / 2
-total_spread_cost = CFD_SPREAD_EUR_MWH  (per lot)
+spread_cost_entry = FUTURES_SPREAD_EUR_MWH / 2
+spread_cost_exit  = FUTURES_SPREAD_EUR_MWH / 2
+total_spread_cost = FUTURES_SPREAD_EUR_MWH  (per lot)
 ```
 
 **Overnight financing charge**
@@ -228,7 +228,7 @@ total_spread_cost = CFD_SPREAD_EUR_MWH  (per lot)
 CFDs carry a daily financing charge proportional to the notional value held overnight:
 
 ```
-daily_financing_rate = CFD_FINANCING_RATE_PA / 365
+daily_financing_rate = FUTURES_FINANCING_RATE_PA / 365
 
 financing_charge_per_day = entry_price_eur_mwh
                            * lot_size_mwh

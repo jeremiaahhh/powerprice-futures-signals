@@ -1,10 +1,10 @@
 """
-CFD cost-model and signal routes.
+Futures cost-model and signal routes.
 
-GET  /cfd/cost-model    – return current CostModelConfig
-POST /cfd/cost-model    – update CostModelConfig
-GET  /cfd/signal        – generate and return the current Signal
-GET  /cfd/explain-signal – return Signal with detailed feature_explanation
+GET  /futures/cost-model    – return current CostModelConfig
+POST /futures/cost-model    – update CostModelConfig
+GET  /futures/signal        – generate and return the current Signal
+GET  /futures/explain-signal – return Signal with detailed feature_explanation
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_db
-from app.db.models import HourlyPrice, CFDSignal
+from app.db.models import HourlyPrice, FuturesSignal
 from app.api.schemas import (
     CostModelConfig,
     CostBreakdown,
@@ -43,13 +43,13 @@ _CONFIG_PERSIST_PATH = os.path.join(
 )
 
 _cost_model_config: CostModelConfig = CostModelConfig(
-    avg_spread_eur_mwh=settings.cfd_avg_spread_eur_mwh,
-    slippage_eur_mwh=settings.cfd_slippage_eur_mwh,
-    overnight_fee_annual_pct=settings.cfd_overnight_fee_annual_pct,
-    weekend_fee_multiplier=settings.cfd_weekend_fee_multiplier,
-    broker_markup_eur_mwh=settings.cfd_broker_markup_eur_mwh,
-    safety_buffer_eur_mwh=settings.cfd_safety_buffer_eur_mwh,
-    min_edge_threshold=settings.cfd_min_edge_threshold,
+    avg_spread_eur_mwh=settings.futures_avg_spread_eur_mwh,
+    slippage_eur_mwh=settings.futures_slippage_eur_mwh,
+    overnight_fee_annual_pct=settings.futures_overnight_fee_annual_pct,
+    weekend_fee_multiplier=settings.futures_weekend_fee_multiplier,
+    broker_markup_eur_mwh=settings.futures_broker_markup_eur_mwh,
+    safety_buffer_eur_mwh=settings.futures_safety_buffer_eur_mwh,
+    min_edge_threshold=settings.futures_min_edge_threshold,
     holding_hours=4,
 )
 
@@ -90,7 +90,7 @@ def _compute_cost_breakdown(
     config: CostModelConfig,
     is_weekend: bool = False,
 ) -> CostBreakdown:
-    """Calculate itemised CFD costs for a trade."""
+    """Calculate itemised Futures costs for a trade."""
     spread_cost = config.avg_spread_eur_mwh
     slippage_cost = config.slippage_eur_mwh
 
@@ -405,7 +405,7 @@ async def _generate_signal(
             timestamp=signal_ts,
             generated_at=now,
             current_price=current_price,
-            reason=f"Current price {current_price:.2f} EUR/MWh is non-negative. No CFD rebound trade warranted.",
+            reason=f"Current price {current_price:.2f} EUR/MWh is non-negative. No Futures rebound trade warranted.",
         )
 
     # --- 3. Load features and run ML models ---
@@ -468,7 +468,7 @@ async def _generate_signal(
     # --- 4. Regime classification ---
     regime_result = None
     regime_net_edge_enter = config.min_edge_threshold
-    regime_net_edge_hc = settings.cfd_high_confidence_threshold
+    regime_net_edge_hc = settings.futures_high_confidence_threshold
 
     try:
         from app.regime import RegimeClassifier
@@ -477,7 +477,7 @@ async def _generate_signal(
             regime_result = clf.classify(X_latest.iloc[0])
             thr = regime_result.signal_thresholds
             regime_net_edge_enter = thr.get("net_edge_enter", config.min_edge_threshold)
-            regime_net_edge_hc = thr.get("net_edge_hc", settings.cfd_high_confidence_threshold)
+            regime_net_edge_hc = thr.get("net_edge_hc", settings.futures_high_confidence_threshold)
     except Exception as exc:
         logger.warning("Regime classification failed (using defaults): %s", exc)
 
@@ -530,7 +530,7 @@ async def _generate_signal(
                     p_rebound=round(p_rebound, 4) if p_rebound is not None else None,
                     expected_rebound_eur_mwh=None,
                     gross_edge=None,
-                    estimated_cfd_costs=None,
+                    estimated_futures_costs=None,
                     net_edge=None,
                     cost_breakdown=None,
                     stop_loss=None,
@@ -552,11 +552,11 @@ async def _generate_signal(
     # --- 5. Edge calculation ---
     is_weekend = signal_ts.weekday() >= 5
     cost_breakdown = _compute_cost_breakdown(config, is_weekend=is_weekend)
-    estimated_cfd_costs = cost_breakdown.total_eur_mwh
+    estimated_futures_costs = cost_breakdown.total_eur_mwh
 
     expected_rebound = max(0.0, predicted_price - current_price)
     gross_edge = expected_rebound
-    net_edge = gross_edge - estimated_cfd_costs
+    net_edge = gross_edge - estimated_futures_costs
 
     stop_loss = current_price - 20.0
     take_profit = current_price + (expected_rebound * 0.8)
@@ -585,7 +585,7 @@ async def _generate_signal(
             p_rebound=p_rebound,
             expected_rebound_eur_mwh=round(expected_rebound, 2),
             gross_edge=round(gross_edge, 2),
-            estimated_cfd_costs=round(estimated_cfd_costs, 2),
+            estimated_futures_costs=round(estimated_futures_costs, 2),
             net_edge=round(net_edge, 2),
             cost_breakdown=cost_breakdown,
             stop_loss=round(stop_loss, 2),
@@ -645,7 +645,7 @@ async def _generate_signal(
     regime_label = regime_result.regime.value if regime_result is not None else "UNKNOWN"
 
     if (
-        p_rebound >= settings.cfd_p_rebound_entry
+        p_rebound >= settings.futures_p_rebound_entry
         and net_edge >= regime_net_edge_hc
         and directional_confirmed
         and battery_confirmed
@@ -660,7 +660,7 @@ async def _generate_signal(
             f"Regime: {regime_label}."
         )
     elif (
-        p_rebound >= settings.cfd_p_rebound_entry
+        p_rebound >= settings.futures_p_rebound_entry
         and net_edge >= regime_net_edge_enter
     ):
         action = SignalAction.ENTER_LONG_REBOUND_SIGNAL
@@ -670,18 +670,18 @@ async def _generate_signal(
             f"net_edge={net_edge:.1f} EUR/MWh (>={regime_net_edge_enter:.0f}). "
             f"Regime: {regime_label}.{batt_note}"
         )
-    elif net_edge >= settings.cfd_watch_threshold:
+    elif net_edge >= settings.futures_watch_threshold:
         action = SignalAction.WATCH_LONG_REBOUND
         reason = (
             f"Price {current_price:.2f} EUR/MWh — WATCH zone: net_edge={net_edge:.1f} "
-            f"EUR/MWh in [{settings.cfd_watch_threshold:.0f}, {regime_net_edge_enter:.0f}) range "
+            f"EUR/MWh in [{settings.futures_watch_threshold:.0f}, {regime_net_edge_enter:.0f}) range "
             f"or p_rebound={p_rebound:.0%} below threshold. Regime: {regime_label}."
         )
     else:
         action = SignalAction.NO_TRADE
         reason = (
             f"Insufficient edge: price={current_price:.2f}, p_rebound={p_rebound:.2f}, "
-            f"net_edge={net_edge:.2f} EUR/MWh (below watch threshold {settings.cfd_watch_threshold:.0f}). "
+            f"net_edge={net_edge:.2f} EUR/MWh (below watch threshold {settings.futures_watch_threshold:.0f}). "
             f"Regime: {regime_label}."
         )
 
@@ -696,7 +696,7 @@ async def _generate_signal(
 
     # --- 9. Persist signal to DB ---
     try:
-        signal_record = CFDSignal(
+        signal_record = FuturesSignal(
             timestamp=signal_ts,
             action=action.value,
             confidence=confidence,
@@ -706,7 +706,7 @@ async def _generate_signal(
             p_rebound=p_rebound,
             expected_rebound_eur_mwh=round(expected_rebound, 2),
             gross_edge=round(gross_edge, 2),
-            estimated_cfd_costs=round(estimated_cfd_costs, 2),
+            estimated_futures_costs=round(estimated_futures_costs, 2),
             net_edge=round(net_edge, 2),
             stop_loss=round(stop_loss, 2),
             take_profit=round(take_profit, 2),
@@ -731,7 +731,7 @@ async def _generate_signal(
         p_rebound=round(p_rebound, 4),
         expected_rebound_eur_mwh=round(expected_rebound, 2),
         gross_edge=round(gross_edge, 2),
-        estimated_cfd_costs=round(estimated_cfd_costs, 2),
+        estimated_futures_costs=round(estimated_futures_costs, 2),
         net_edge=round(net_edge, 2),
         cost_breakdown=cost_breakdown,
         stop_loss=round(stop_loss, 2),
@@ -748,16 +748,16 @@ async def _generate_signal(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/cost-model", response_model=CostModelConfig, summary="Get current CFD cost model config")
+@router.get("/cost-model", response_model=CostModelConfig, summary="Get current Futures cost model config")
 async def get_cost_model() -> CostModelConfig:
-    """Return the currently active CFD cost model configuration."""
+    """Return the currently active Futures cost model configuration."""
     return _cost_model_config
 
 
-@router.post("/cost-model", response_model=CostModelConfig, summary="Update CFD cost model config")
+@router.post("/cost-model", response_model=CostModelConfig, summary="Update Futures cost model config")
 async def update_cost_model(config: CostModelConfig) -> CostModelConfig:
     """
-    Update the CFD cost model configuration.
+    Update the Futures cost model configuration.
 
     Validates all parameters and persists the updated config to disk so that
     it survives service restarts.
@@ -765,17 +765,17 @@ async def update_cost_model(config: CostModelConfig) -> CostModelConfig:
     global _cost_model_config
 
     # Additional business-logic validations
-    if config.avg_spread_eur_mwh > settings.cfd_max_spread_eur_mwh:
+    if config.avg_spread_eur_mwh > settings.futures_max_spread_eur_mwh:
         raise HTTPException(
             status_code=422,
             detail=f"avg_spread_eur_mwh {config.avg_spread_eur_mwh} exceeds maximum "
-                   f"allowed value of {settings.cfd_max_spread_eur_mwh}",
+                   f"allowed value of {settings.futures_max_spread_eur_mwh}",
         )
-    if config.avg_spread_eur_mwh < settings.cfd_min_spread_eur_mwh:
+    if config.avg_spread_eur_mwh < settings.futures_min_spread_eur_mwh:
         raise HTTPException(
             status_code=422,
             detail=f"avg_spread_eur_mwh {config.avg_spread_eur_mwh} is below minimum "
-                   f"allowed value of {settings.cfd_min_spread_eur_mwh}",
+                   f"allowed value of {settings.futures_min_spread_eur_mwh}",
         )
 
     _cost_model_config = config
@@ -784,10 +784,10 @@ async def update_cost_model(config: CostModelConfig) -> CostModelConfig:
     return _cost_model_config
 
 
-@router.get("/signal", response_model=SignalResponse, summary="Generate current CFD signal")
+@router.get("/signal", response_model=SignalResponse, summary="Generate current Futures signal")
 async def get_signal(db: AsyncSession = Depends(get_db)) -> SignalResponse:
     """
-    Generate and return the current CFD trading signal.
+    Generate and return the current Futures trading signal.
 
     Fetches the latest market data, runs all ML models, evaluates the signal
     engine, and returns a structured signal with edge calculation and risk levels.
@@ -802,10 +802,10 @@ async def get_signal_history(
     limit: int = Query(default=20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> List[SignalResponse]:
-    """Return the last N persisted CFD signals from the database."""
+    """Return the last N persisted Futures signals from the database."""
     stmt = (
-        select(CFDSignal)
-        .order_by(CFDSignal.timestamp.desc())
+        select(FuturesSignal)
+        .order_by(FuturesSignal.timestamp.desc())
         .limit(limit)
     )
     result = await db.execute(stmt)
@@ -823,7 +823,7 @@ async def get_signal_history(
             p_rebound=r.p_rebound,
             expected_rebound_eur_mwh=r.expected_rebound_eur_mwh,
             gross_edge=r.gross_edge,
-            estimated_cfd_costs=r.estimated_cfd_costs,
+            estimated_futures_costs=r.estimated_futures_costs,
             net_edge=r.net_edge,
             stop_loss=r.stop_loss,
             take_profit=r.take_profit,
@@ -837,9 +837,9 @@ async def get_signal_history(
 @router.get("/explain-signal", response_model=SignalResponse, summary="Signal with feature explanation")
 async def get_signal_with_explanation(db: AsyncSession = Depends(get_db)) -> SignalResponse:
     """
-    Generate the current CFD signal with a detailed feature explanation.
+    Generate the current Futures signal with a detailed feature explanation.
 
-    Returns the same signal as GET /cfd/signal but enriches the response with
+    Returns the same signal as GET /futures/signal but enriches the response with
     the top model features and their contributions, enabling interpretability.
     """
     return await _generate_signal(db, include_explanation=True)

@@ -183,7 +183,7 @@ class TelegramCommandHandler:
 
     async def _cmd_info(self, args: List[str]) -> None:
         await self._reply(
-            "<b>PowerPrice CFD Signals — Systemübersicht</b>\n\n"
+            "<b>PowerPrice Futures Signals — Systemübersicht</b>\n\n"
             "Deutsches Strompreis-ML-Signalsystem. Erkennt negative "
             "Preisphasen und Rebound-Chancen auf Basis von SMARD/ENTSO-E-Daten.\n\n"
 
@@ -291,7 +291,7 @@ class TelegramCommandHandler:
         try:
             import httpx
             async with httpx.AsyncClient(timeout=20.0) as c:
-                r = await c.get(f"{_API_BASE}/cfd/signal")
+                r = await c.get(f"{_API_BASE}/futures/signal")
                 sig = r.json()
         except Exception as exc:
             await self._reply(f"Signal-Generierung fehlgeschlagen: {_h(str(exc))}")
@@ -336,8 +336,8 @@ class TelegramCommandHandler:
                 "strategy": "ml_rebound",
                 "start_date": start_dt.isoformat(),
                 "end_date": end_dt.isoformat(),
-                "p_rebound_threshold": settings.cfd_p_rebound_entry,
-                "min_edge_threshold": settings.cfd_min_edge_threshold,
+                "p_rebound_threshold": settings.futures_p_rebound_entry,
+                "min_edge_threshold": settings.futures_min_edge_threshold,
             }
             async with httpx.AsyncClient(timeout=120.0) as c:
                 r = await c.post(f"{_API_BASE}/backtest/run", json=payload)

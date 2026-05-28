@@ -36,7 +36,7 @@ from app.core.config import settings
 DSN = "postgresql://ppuser:pppass@localhost:5432/powerprice"
 
 # ---------------------------------------------------------------------------
-# CFD cost constants (default)
+# Futures cost constants (default)
 # ---------------------------------------------------------------------------
 _D_SPREAD    = 5.0
 _D_SLIPPAGE  = 3.0

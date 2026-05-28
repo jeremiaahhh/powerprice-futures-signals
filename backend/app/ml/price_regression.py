@@ -1,5 +1,5 @@
 """
-XGBoost price regression model for the PowerPrice CFD Signals platform.
+XGBoost price regression model for the PowerPrice Futures Signals platform.
 
 Predicts the expected electricity spot price (EUR/MWh) ``horizon_hours``
 ahead.  Walk-forward (TimeSeriesSplit) cross-validation is used to avoid

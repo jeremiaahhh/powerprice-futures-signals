@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 
 from app.backtest.backtester import Backtester
-from app.cfd.cost_model import CFDCostModel
+from app.futures.cost_model import CFDCostModel
 from app.ml.negative_price_classifier import NegativePriceClassifier
 from app.ml.rebound_classifier import ReboundClassifier
 from app.ml.price_regression import PriceRegressionModel

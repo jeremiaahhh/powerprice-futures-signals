@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_db
-from app.db.models import PaperPosition, CFDSignal
+from app.db.models import PaperPosition, FuturesSignal
 from app.api.schemas import (
     CostModelConfig,
     PaperPositionResponse,
@@ -106,7 +106,7 @@ def _position_to_response(pos: PaperPosition) -> PaperPositionResponse:
         take_profit=pos.take_profit,
         max_holding_hours=pos.max_holding_hours,
         pnl_eur=pos.pnl_eur,
-        cfd_costs_eur=pos.cfd_costs_eur,
+        futures_costs_eur=pos.futures_costs_eur,
         net_pnl_eur=pos.net_pnl_eur,
         exit_reason=pos.exit_reason,
         holding_hours=round(holding_hours, 2) if holding_hours is not None else None,
@@ -121,23 +121,23 @@ def _calculate_pnl(
     notional_size_mwh: float,
     cost_model: Optional[CostModelConfig] = None,
 ) -> tuple[float, float, float]:
-    """Return (pnl_gross, cfd_costs, net_pnl)."""
+    """Return (pnl_gross, futures_costs, net_pnl)."""
     if cost_model is None:
         cost_model = CostModelConfig()
 
     pnl_gross = (exit_price - entry_price) * notional_size_mwh
 
-    # Total estimated CFD costs
+    # Total estimated Futures costs
     total_cost_per_mwh = (
         cost_model.avg_spread_eur_mwh
         + cost_model.slippage_eur_mwh
         + cost_model.broker_markup_eur_mwh
         + cost_model.safety_buffer_eur_mwh
     )
-    cfd_costs = total_cost_per_mwh * notional_size_mwh
-    net_pnl = pnl_gross - cfd_costs
+    futures_costs = total_cost_per_mwh * notional_size_mwh
+    net_pnl = pnl_gross - futures_costs
 
-    return round(pnl_gross, 4), round(cfd_costs, 4), round(net_pnl, 4)
+    return round(pnl_gross, 4), round(futures_costs, 4), round(net_pnl, 4)
 
 
 # ---------------------------------------------------------------------------
@@ -218,7 +218,7 @@ async def get_paper_status(db: AsyncSession = Depends(get_db)) -> PaperStatusRes
 
     total_net_pnl = sum(p.net_pnl_eur or 0.0 for p in all_closed)
     total_gross_pnl = sum(p.pnl_eur or 0.0 for p in all_closed)
-    total_cfd_costs = sum(p.cfd_costs_eur or 0.0 for p in all_closed)
+    total_futures_costs = sum(p.futures_costs_eur or 0.0 for p in all_closed)
 
     winners = [p for p in all_closed if (p.net_pnl_eur or 0.0) > 0]
     losers = [p for p in all_closed if (p.net_pnl_eur or 0.0) <= 0]
@@ -253,7 +253,7 @@ async def get_paper_status(db: AsyncSession = Depends(get_db)) -> PaperStatusRes
         total_closed_positions=len(all_closed),
         total_net_pnl_eur=round(total_net_pnl, 2),
         total_gross_pnl_eur=round(total_gross_pnl, 2),
-        total_cfd_costs_eur=round(total_cfd_costs, 2),
+        total_futures_costs_eur=round(total_futures_costs, 2),
         win_rate_pct=round(win_rate, 2) if win_rate is not None else None,
         profit_factor=round(profit_factor, 4) if profit_factor is not None else None,
         best_trade_net_pnl_eur=round(best_trade, 2) if best_trade is not None else None,
@@ -365,7 +365,7 @@ async def close_paper_position(
         )
 
     now = datetime.now(timezone.utc)
-    pnl_gross, cfd_costs, net_pnl = _calculate_pnl(
+    pnl_gross, futures_costs, net_pnl = _calculate_pnl(
         position.entry_price,
         request.exit_price,
         position.notional_size_mwh,
@@ -375,7 +375,7 @@ async def close_paper_position(
     position.exit_price = request.exit_price
     position.exit_timestamp = now
     position.pnl_eur = pnl_gross
-    position.cfd_costs_eur = cfd_costs
+    position.futures_costs_eur = futures_costs
     position.net_pnl_eur = net_pnl
     position.exit_reason = request.exit_reason
     position.updated_at = now

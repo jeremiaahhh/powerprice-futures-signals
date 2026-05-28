@@ -16,7 +16,7 @@ REM ============================================================
 setlocal EnableDelayedExpansion
 
 REM ---- PATHS (edit these) ----
-set PROJECT_DIR=C:\powerprice-cfd-signals
+set PROJECT_DIR=C:\powerprice-futures-signals
 set BACKEND_DIR=%PROJECT_DIR%\backend
 set VENV_PYTHON=%PROJECT_DIR%\.venv\Scripts\python.exe
 set DATA_DIR=%PROJECT_DIR%\data
@@ -26,7 +26,7 @@ REM set NSSM=C:\nssm\nssm.exe
 
 set SERVICE_NAME=PowerPriceSignalDaemon
 set DISPLAY_NAME=PowerPrice Signal Daemon
-set DESCRIPTION=PowerPrice CFD Signal generation daemon. SIGNAL ONLY — no live orders.
+set DESCRIPTION=PowerPrice Futures Signal generation daemon. SIGNAL ONLY — no live orders.
 
 REM ---- Pre-flight checks ----
 if not exist "%VENV_PYTHON%" (

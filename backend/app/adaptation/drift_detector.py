@@ -148,14 +148,14 @@ class DriftDetector:
             rec_start = now - timedelta(days=self.window_days)
 
             cur.execute(
-                "SELECT p_rebound FROM cfd_signals WHERE timestamp >= %s AND timestamp < %s "
+                "SELECT p_rebound FROM futures_signals WHERE timestamp >= %s AND timestamp < %s "
                 "AND p_rebound IS NOT NULL ORDER BY timestamp",
                 (ref_start, rec_start)
             )
             ref_vals = np.array([r[0] for r in cur.fetchall()])
 
             cur.execute(
-                "SELECT p_rebound FROM cfd_signals WHERE timestamp >= %s "
+                "SELECT p_rebound FROM futures_signals WHERE timestamp >= %s "
                 "AND p_rebound IS NOT NULL ORDER BY timestamp",
                 (rec_start,)
             )

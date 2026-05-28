@@ -3,7 +3,7 @@
 # The agent survives OS sleep — launchd restarts it automatically after wake.
 #
 # Usage:
-#   cd /path/to/powerprice-cfd-signals
+#   cd /path/to/powerprice-futures-signals
 #   bash infra/macos/install.sh [--venv /path/to/venv]
 #
 # Requirements: Python venv with project dependencies installed.

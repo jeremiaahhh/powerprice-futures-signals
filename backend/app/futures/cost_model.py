@@ -1,7 +1,7 @@
 """
-CFD Cost Model for German Electricity Price CFDs.
+Futures Cost Model for German Electricity Futures.
 
-Models the full cost stack of a CFD trade:
+Models the full cost stack of a Futures trade:
   - Dynamic spread (volatility-adjusted)
   - Slippage
   - Overnight/weekend financing
@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 class CostModelConfig(BaseModel):
-    """All tunable parameters for the CFD cost model."""
+    """All tunable parameters for the Futures cost model."""
 
     avg_spread_eur_mwh: float = Field(5.0, ge=0, description="Average half-spread in EUR/MWh")
     min_spread_eur_mwh: float = Field(2.0, ge=0, description="Minimum spread floor in EUR/MWh")
@@ -75,9 +75,9 @@ class CostBreakdown(BaseModel):
 # Cost model
 # ---------------------------------------------------------------------------
 
-class CFDCostModel:
+class FuturesCostModel:
     """
-    Realistic CFD cost model for German electricity price CFDs.
+    Realistic Futures cost model for German electricity Futures.
 
     Net edge formula:
         net_edge = expected_rebound
@@ -94,7 +94,7 @@ class CFDCostModel:
     def __init__(self, config: Optional[CostModelConfig] = None) -> None:
         self.config = config or CostModelConfig()
         logger.info(
-            "CFDCostModel initialised",
+            "FuturesCostModel initialised",
             extra={
                 "avg_spread": self.config.avg_spread_eur_mwh,
                 "min_edge": self.config.minimum_edge_threshold,

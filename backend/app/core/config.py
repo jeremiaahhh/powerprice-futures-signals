@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     )
 
     # App
-    app_name: str = "PowerPrice CFD Signals"
+    app_name: str = "PowerPrice Futures Signals"
     app_env: str = "development"
     signal_only: bool = True
     secret_key: str = "change-me"
@@ -35,19 +35,19 @@ class Settings(BaseSettings):
     model_dir: str = "/app/models"
     retrain_interval_hours: int = 24
 
-    # CFD Defaults
-    cfd_avg_spread_eur_mwh: float = 5.0
-    cfd_min_spread_eur_mwh: float = 2.0
-    cfd_max_spread_eur_mwh: float = 15.0
-    cfd_volatility_spread_multiplier: float = 1.5
-    cfd_slippage_eur_mwh: float = 3.0
-    cfd_overnight_fee_annual_pct: float = 8.0
-    cfd_weekend_fee_multiplier: float = 1.5
-    cfd_broker_markup_eur_mwh: float = 1.0
-    cfd_safety_buffer_eur_mwh: float = 5.0
-    cfd_min_edge_threshold: float = 30.0
-    cfd_high_confidence_threshold: float = 35.0
-    cfd_watch_threshold: float = 20.0
+    # Futures Defaults
+    futures_avg_spread_eur_mwh: float = 5.0
+    futures_min_spread_eur_mwh: float = 2.0
+    futures_max_spread_eur_mwh: float = 15.0
+    futures_volatility_spread_multiplier: float = 1.5
+    futures_slippage_eur_mwh: float = 3.0
+    futures_overnight_fee_annual_pct: float = 8.0
+    futures_weekend_fee_multiplier: float = 1.5
+    futures_broker_markup_eur_mwh: float = 1.0
+    futures_safety_buffer_eur_mwh: float = 5.0
+    futures_min_edge_threshold: float = 30.0
+    futures_high_confidence_threshold: float = 35.0
+    futures_watch_threshold: float = 20.0
 
     # Risk
     max_risk_per_signal_pct: float = 0.5
@@ -66,8 +66,8 @@ class Settings(BaseSettings):
     tail_risk_vol_spike_multiplier: float = 2.5
 
     # Raised entry thresholds (from OOS analysis, 2026-05-20)
-    cfd_p_rebound_entry: float = 0.70
-    cfd_p_rebound_watch: float = 0.55
+    futures_p_rebound_entry: float = 0.70
+    futures_p_rebound_watch: float = 0.55
 
     # Daemon
     signal_daemon_enabled: bool = True

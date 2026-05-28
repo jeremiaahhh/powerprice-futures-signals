@@ -215,7 +215,7 @@ export default function CostSimulator() {
               min={0} max={10} step={0.1}
               unit="€/MWh"
               onChange={updateConfig('avg_spread')}
-              description="Typical bid-ask spread for DE power CFD"
+              description="Typical bid-ask spread for DE power Futures"
               color="#ff3366"
             />
             <SliderInput

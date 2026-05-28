@@ -1,5 +1,5 @@
 """
-Model training orchestrator for the PowerPrice CFD Signals platform.
+Model training orchestrator for the PowerPrice Futures Signals platform.
 
 Loads historical data from PostgreSQL and co-ordinates training of all
 three ML models (NegativePriceClassifier, ReboundClassifier,

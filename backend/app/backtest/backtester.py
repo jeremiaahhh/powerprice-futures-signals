@@ -1,5 +1,5 @@
 """
-Backtesting Engine for German Electricity Price CFD Strategies.
+Backtesting Engine for German Electricity Price Futures Strategies.
 
 Implements two strategies:
   - NaiveStrategy : Enter long whenever price < 0, exit after 4 h or price > 0.
@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from app.cfd.cost_model import CFDCostModel
+from app.futures.cost_model import FuturesCostModel
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -43,7 +43,7 @@ _RISK_FREE_HOURLY = 0.02 / _HOURS_PER_YEAR  # 2 % p.a. expressed per hour
 
 @dataclass
 class Trade:
-    """Record of a single completed CFD trade."""
+    """Record of a single completed Futures trade."""
 
     trade_id: str
     entry_timestamp: datetime
@@ -51,8 +51,8 @@ class Trade:
     entry_price: float
     exit_price: float
     pnl_gross: float          # (exit_price - entry_price) * notional_mwh
-    pnl_net: float            # pnl_gross - cfd_costs
-    cfd_costs: float
+    pnl_net: float            # pnl_gross - futures_costs
+    futures_costs: float
     holding_hours: float
     exit_reason: str          # take_profit | stop_loss | time_exit | price_positive
     notional_mwh: float = 1.0
@@ -94,7 +94,7 @@ class BacktestMetrics:
 class NaiveStrategy:
     """
     Naive baseline: go long whenever price < 0, exit after 4 h or when
-    price returns to ≥ 0.  CFD costs are applied to every trade.
+    price returns to ≥ 0.  Futures costs are applied to every trade.
     """
 
     HOLDING_HOURS: int = 4
@@ -103,7 +103,7 @@ class NaiveStrategy:
     def generate_trades(
         self,
         df: pd.DataFrame,
-        cost_model: CFDCostModel,
+        cost_model: FuturesCostModel,
     ) -> List[Trade]:
         """
         Iterate through hourly price data and simulate the naive strategy.
@@ -111,7 +111,7 @@ class NaiveStrategy:
         Args:
             df: DataFrame with at least a ``price_eur_mwh`` column and a
                 DatetimeIndex (or ``timestamp`` column).
-            cost_model: Used to deduct realistic CFD costs from each trade.
+            cost_model: Used to deduct realistic Futures costs from each trade.
 
         Returns:
             List of completed Trade records.
@@ -153,8 +153,8 @@ class NaiveStrategy:
                     )
 
                     pnl_gross = (exit_price - entry_price) * self.NOTIONAL_MWH
-                    cfd_costs = cost_breakdown.total_cost * self.NOTIONAL_MWH
-                    pnl_net = pnl_gross - cfd_costs
+                    futures_costs = cost_breakdown.total_cost * self.NOTIONAL_MWH
+                    pnl_net = pnl_gross - futures_costs
 
                     exit_reason = "price_positive" if price >= 0 else "time_exit"
 
@@ -167,7 +167,7 @@ class NaiveStrategy:
                             exit_price=exit_price,
                             pnl_gross=round(pnl_gross, 4),
                             pnl_net=round(pnl_net, 4),
-                            cfd_costs=round(cfd_costs, 4),
+                            futures_costs=round(futures_costs, 4),
                             holding_hours=float(hours_held),
                             exit_reason=exit_reason,
                             notional_mwh=self.NOTIONAL_MWH,
@@ -208,7 +208,7 @@ class MLReboundStrategy:
 
     def __init__(
         self,
-        cost_model: CFDCostModel,
+        cost_model: FuturesCostModel,
         p_rebound_threshold: float = 0.60,
         min_edge_threshold: float = 30.0,
         max_holding_hours: int = 6,
@@ -324,8 +324,8 @@ class MLReboundStrategy:
                     )
 
                     pnl_gross = (exit_price - entry_price) * self.NOTIONAL_MWH
-                    cfd_costs = cost_breakdown.total_cost * self.NOTIONAL_MWH
-                    pnl_net = pnl_gross - cfd_costs
+                    futures_costs = cost_breakdown.total_cost * self.NOTIONAL_MWH
+                    pnl_net = pnl_gross - futures_costs
 
                     trades.append(
                         Trade(
@@ -336,7 +336,7 @@ class MLReboundStrategy:
                             exit_price=exit_price,
                             pnl_gross=round(pnl_gross, 4),
                             pnl_net=round(pnl_net, 4),
-                            cfd_costs=round(cfd_costs, 4),
+                            futures_costs=round(futures_costs, 4),
                             holding_hours=float(hours_held),
                             exit_reason=exit_reason,
                             notional_mwh=self.NOTIONAL_MWH,
@@ -371,7 +371,7 @@ class Backtester:
         comparison    = bt.compare(df, predictions_df)
     """
 
-    def __init__(self, cost_model: CFDCostModel) -> None:
+    def __init__(self, cost_model: FuturesCostModel) -> None:
         self.cost_model = cost_model
 
     def run_naive(self, df: pd.DataFrame) -> BacktestMetrics:
@@ -504,7 +504,7 @@ class Backtester:
                 "exit_price": round(t.exit_price, 4),
                 "pnl_gross": round(t.pnl_gross, 4),
                 "pnl_net": round(t.pnl_net, 4),
-                "cfd_costs": round(t.cfd_costs, 4),
+                "futures_costs": round(t.futures_costs, 4),
                 "holding_hours": round(t.holding_hours, 2),
                 "exit_reason": t.exit_reason,
             }

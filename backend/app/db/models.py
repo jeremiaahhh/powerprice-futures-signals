@@ -57,9 +57,9 @@ class MLPrediction(Base):
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
-class CFDSignal(Base):
-    __tablename__ = "cfd_signals"
-    __table_args__ = (Index("ix_cfd_signals_timestamp", "timestamp"),)
+class FuturesSignal(Base):
+    __tablename__ = "futures_signals"
+    __table_args__ = (Index("ix_futures_signals_timestamp", "timestamp"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime(timezone=True), nullable=False)
@@ -71,7 +71,7 @@ class CFDSignal(Base):
     p_rebound = Column(Float, nullable=True)
     expected_rebound_eur_mwh = Column(Float, nullable=True)
     gross_edge = Column(Float, nullable=True)
-    estimated_cfd_costs = Column(Float, nullable=True)
+    estimated_futures_costs = Column(Float, nullable=True)
     net_edge = Column(Float, nullable=True)
     stop_loss = Column(Float, nullable=True)
     take_profit = Column(Float, nullable=True)
@@ -86,7 +86,7 @@ class PaperPosition(Base):
     __tablename__ = "paper_positions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    signal_id = Column(Integer, ForeignKey("cfd_signals.id"), nullable=True)
+    signal_id = Column(Integer, ForeignKey("futures_signals.id"), nullable=True)
     status = Column(String(20), nullable=False, default="open")  # open, closed
     entry_price = Column(Float, nullable=False)
     exit_price = Column(Float, nullable=True)
@@ -97,7 +97,7 @@ class PaperPosition(Base):
     take_profit = Column(Float, nullable=True)
     max_holding_hours = Column(Integer, nullable=True)
     pnl_eur = Column(Float, nullable=True)
-    cfd_costs_eur = Column(Float, nullable=True)
+    futures_costs_eur = Column(Float, nullable=True)
     net_pnl_eur = Column(Float, nullable=True)
     exit_reason = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)

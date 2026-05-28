@@ -254,7 +254,7 @@ class SignalDaemon:
     async def _step_generate_signal(self) -> Optional[Dict]:
         """Steps 3-6: Build features, detect regime, assess tail risk, generate signal."""
         try:
-            from app.api.routes.cfd import _generate_signal
+            from app.api.routes.futures import _generate_signal
             from app.db.session import get_db
 
             async for db in get_db():
@@ -267,7 +267,7 @@ class SignalDaemon:
     async def _step_persist_signal(self, sig: Dict) -> Optional[int]:
         """Step 7: Save signal and shadow signal to DB. Returns signal_id."""
         try:
-            from app.db.models import CFDSignal, ShadowSignal
+            from app.db.models import FuturesSignal, ShadowSignal
             from app.db.session import get_db
 
             action = sig.get("action") or "NO_TRADE"
@@ -278,8 +278,8 @@ class SignalDaemon:
             async for db in get_db():
                 now = datetime.now(timezone.utc)
 
-                # CFDSignal
-                record = CFDSignal(
+                # FuturesSignal
+                record = FuturesSignal(
                     timestamp=sig.get("timestamp") or now,
                     action=str(action),
                     confidence=sig.get("confidence") or 0.0,
@@ -289,7 +289,7 @@ class SignalDaemon:
                     p_rebound=sig.get("p_rebound"),
                     expected_rebound_eur_mwh=sig.get("expected_rebound_eur_mwh"),
                     gross_edge=sig.get("gross_edge"),
-                    estimated_cfd_costs=sig.get("estimated_cfd_costs"),
+                    estimated_futures_costs=sig.get("estimated_futures_costs"),
                     net_edge=sig.get("net_edge"),
                     stop_loss=sig.get("stop_loss"),
                     take_profit=sig.get("take_profit"),

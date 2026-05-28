@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate the current CFD signal using live data + trained models.
+Generate the current Futures signal using live data + trained models.
 Shows what signal the system would emit right now.
 """
 import sys
@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 from app.signals.signal_engine import SignalEngine
-from app.cfd.cost_model import CFDCostModel
+from app.futures.cost_model import CFDCostModel
 from app.ml.negative_price_classifier import NegativePriceClassifier
 from app.ml.rebound_classifier import ReboundClassifier
 from app.ml.price_regression import PriceRegressionModel
@@ -99,7 +99,7 @@ print(f"p_rebound  (prob of rebound if neg): {p_rebound:.3f}")
 print(f"Predicted price (next period):       {predicted_price:.2f} EUR/MWh")
 
 # ---------------------------------------------------------------------------
-# CFD cost model edge calculation
+# Futures cost model edge calculation
 # ---------------------------------------------------------------------------
 
 current_price = float(latest["price_eur_mwh"])
@@ -116,7 +116,7 @@ if current_price < 0:
     print(f"\nCFD Edge (current price IS negative):")
     print(f"  Expected rebound:     {expected_rebound:.2f} EUR/MWh")
     print(f"  Gross edge:           {cost_result.gross_edge:.2f} EUR/MWh")
-    print(f"  Total CFD costs:      {cost_result.total_cost:.2f} EUR/MWh")
+    print(f"  Total Futures costs:      {cost_result.total_cost:.2f} EUR/MWh")
     print(f"  Net edge:             {cost_result.net_edge:.2f} EUR/MWh")
 
 # ---------------------------------------------------------------------------

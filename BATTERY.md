@@ -1,7 +1,7 @@
 # Battery Storage Intelligence
 
 This document describes how battery storage data is integrated into the
-PowerPrice CFD Signals platform as a structural market factor.
+PowerPrice Futures Signals platform as a structural market factor.
 
 ---
 

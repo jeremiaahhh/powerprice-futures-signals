@@ -112,8 +112,8 @@ def _simulate_trades(
             if should_exit:
                 exit_price = float(price)
                 pnl_gross = (exit_price - entry_price) * params.notional_size_mwh
-                cfd_costs = cost_total * params.notional_size_mwh
-                net_pnl = pnl_gross - cfd_costs
+                futures_costs = cost_total * params.notional_size_mwh
+                net_pnl = pnl_gross - futures_costs
 
                 trades.append({
                     "entry_timestamp": timestamps[entry_idx],
@@ -122,7 +122,7 @@ def _simulate_trades(
                     "exit_price": exit_price,
                     "holding_hours": holding_hours,
                     "pnl_gross": round(pnl_gross, 4),
-                    "cfd_costs": round(cfd_costs, 4),
+                    "futures_costs": round(futures_costs, 4),
                     "net_pnl": round(net_pnl, 4),
                     "exit_reason": exit_reason,
                     "is_winner": net_pnl > 0,
@@ -448,7 +448,7 @@ class TestMetricsCalculation:
                 "exit_price": -10.0 + pnl,
                 "holding_hours": 4,
                 "pnl_gross": round(pnl + 14.0, 4),  # pnl = gross - 14 costs
-                "cfd_costs": 14.0,
+                "futures_costs": 14.0,
                 "net_pnl": round(pnl, 4),
                 "exit_reason": "take_profit" if pnl > 0 else "stop_loss",
                 "is_winner": pnl > 0,
@@ -524,7 +524,7 @@ class TestMetricsCalculation:
                 "exit_price": -30.0,
                 "holding_hours": 4,
                 "pnl_gross": -6.0,
-                "cfd_costs": 14.0,
+                "futures_costs": 14.0,
                 "net_pnl": -20.0,
                 "exit_reason": "stop_loss",
                 "is_winner": False,
@@ -547,7 +547,7 @@ class TestMetricsCalculation:
                 "exit_price": 20.0,
                 "holding_hours": 4,
                 "pnl_gross": 44.0,
-                "cfd_costs": 14.0,
+                "futures_costs": 14.0,
                 "net_pnl": 30.0,
                 "exit_reason": "take_profit",
                 "is_winner": True,

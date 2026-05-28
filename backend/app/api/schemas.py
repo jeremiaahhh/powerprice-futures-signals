@@ -1,5 +1,5 @@
 """
-Pydantic v2 schemas for PowerPrice CFD Signals API.
+Pydantic v2 schemas for PowerPrice Futures Signals API.
 
 All monetary values are in EUR/MWh unless stated otherwise.
 Probabilities are in [0.0, 1.0].
@@ -29,7 +29,7 @@ class SignalAction(str, Enum):
     """Price is negative / very low but edge is below the cost threshold; monitor closely."""
 
     ENTER_LONG_REBOUND_SIGNAL = "ENTER_LONG_REBOUND_SIGNAL"
-    """Price is negative / deeply discounted and net edge exceeds CFD costs; signal to enter long."""
+    """Price is negative / deeply discounted and net edge exceeds Futures costs; signal to enter long."""
 
     EXIT_TAKE_PROFIT_SIGNAL = "EXIT_TAKE_PROFIT_SIGNAL"
     """An open paper position has reached its take-profit target; signal to close."""
@@ -67,13 +67,13 @@ class BacktestStrategy(str, Enum):
 
 
 # ---------------------------------------------------------------------------
-# CFD Cost Model
+# Futures Cost Model
 # ---------------------------------------------------------------------------
 
 
 class CostModelConfig(BaseModel):
     """
-    User-supplied or system-default CFD cost assumptions.
+    User-supplied or system-default Futures cost assumptions.
     All fields in EUR/MWh or % per annum where noted.
     """
 
@@ -128,7 +128,7 @@ class CostModelConfig(BaseModel):
 
 
 class CostBreakdown(BaseModel):
-    """Itemised CFD cost estimate for a trade."""
+    """Itemised Futures cost estimate for a trade."""
 
     spread_cost_eur_mwh: float = Field(description="Entry + exit spread, EUR/MWh")
     slippage_cost_eur_mwh: float = Field(description="Market impact / slippage, EUR/MWh")
@@ -147,7 +147,7 @@ class CostBreakdown(BaseModel):
 
 class SignalResponse(BaseModel):
     """
-    Full signal payload returned by GET /cfd/signal.
+    Full signal payload returned by GET /futures/signal.
     This is purely informational — no live execution occurs.
     """
 
@@ -181,7 +181,7 @@ class SignalResponse(BaseModel):
         default=None,
         ge=0.0,
         le=1.0,
-        description="Probability that price rebounds above the CFD break-even within the holding horizon",
+        description="Probability that price rebounds above the Futures break-even within the holding horizon",
     )
 
     # Edge calculation
@@ -191,15 +191,15 @@ class SignalResponse(BaseModel):
     )
     gross_edge: Optional[float] = Field(
         default=None,
-        description="Raw directional edge before subtracting CFD transaction costs, EUR/MWh",
+        description="Raw directional edge before subtracting Futures transaction costs, EUR/MWh",
     )
-    estimated_cfd_costs: Optional[float] = Field(
+    estimated_futures_costs: Optional[float] = Field(
         default=None,
-        description="Total estimated CFD costs (spread + slippage + overnight + markup + buffer), EUR/MWh",
+        description="Total estimated Futures costs (spread + slippage + overnight + markup + buffer), EUR/MWh",
     )
     net_edge: Optional[float] = Field(
         default=None,
-        description="gross_edge minus estimated_cfd_costs; positive means trade has positive expected value, EUR/MWh",
+        description="gross_edge minus estimated_futures_costs; positive means trade has positive expected value, EUR/MWh",
     )
     cost_breakdown: Optional[CostBreakdown] = Field(
         default=None,
@@ -246,7 +246,7 @@ class SignalResponse(BaseModel):
             "p_rebound": 0.74,
             "expected_rebound_eur_mwh": 47.5,
             "gross_edge": 47.5,
-            "estimated_cfd_costs": 16.0,
+            "estimated_futures_costs": 16.0,
             "net_edge": 31.5,
             "stop_loss": -30.0,
             "take_profit": 30.0,
@@ -443,7 +443,7 @@ class BacktestComparison(BaseModel):
 class PaperTradeRequest(BaseModel):
     """Open a new paper position from a signal."""
 
-    signal_id: Optional[int] = Field(default=None, description="ID of the CFDSignal record that triggered this trade")
+    signal_id: Optional[int] = Field(default=None, description="ID of the FuturesSignal record that triggered this trade")
     entry_price: float = Field(description="Entry price for the paper position, EUR/MWh")
     notional_size_mwh: float = Field(default=1.0, gt=0.0, description="Contract size in MWh")
     stop_loss: Optional[float] = Field(default=None, description="Stop-loss price level, EUR/MWh")
@@ -466,7 +466,7 @@ class PaperPositionResponse(BaseModel):
     take_profit: Optional[float] = None
     max_holding_hours: Optional[int] = None
     pnl_eur: Optional[float] = None
-    cfd_costs_eur: Optional[float] = None
+    futures_costs_eur: Optional[float] = None
     net_pnl_eur: Optional[float] = None
     exit_reason: Optional[str] = None
     holding_hours: Optional[float] = Field(
@@ -502,7 +502,7 @@ class PaperStatusResponse(BaseModel):
     total_closed_positions: int
     total_net_pnl_eur: float
     total_gross_pnl_eur: float
-    total_cfd_costs_eur: float
+    total_futures_costs_eur: float
     win_rate_pct: Optional[float] = None
     profit_factor: Optional[float] = None
     best_trade_net_pnl_eur: Optional[float] = None

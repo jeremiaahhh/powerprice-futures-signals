@@ -1,5 +1,5 @@
 """
-Feature engineering module for the PowerPrice CFD Signals platform.
+Feature engineering module for the PowerPrice Futures Signals platform.
 
 Transforms raw HourlyPrice data into ML-ready feature matrices covering
 cyclical time encodings, renewable penetration, lag/rolling statistics,

@@ -4,7 +4,7 @@ Battery storage feature builder.
 These features are intentionally NOT added to FeatureEngineer.FEATURE_COLUMNS
 to avoid invalidating trained XGBoost models.  They are consumed by:
   - RegimeClassifier   (rule-based — reads any Series key)
-  - Signal engine      (explicit checks in cfd.py)
+  - Signal engine      (explicit checks in futures.py)
   - Battery API routes (GET /battery/features)
   - Backtest comparison scripts
 

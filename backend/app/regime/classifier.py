@@ -1,5 +1,5 @@
 """
-Market regime classifier for German electricity price CFDs.
+Market regime classifier for German electricity Futures.
 
 Uses rule-based logic on engineered features to classify the current market
 into one of six regimes. Thresholds are informed by 2024–2026 historical data.

@@ -9,7 +9,7 @@ async def health_check():
     return {
         "status": "ok",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "powerprice-cfd-signals",
+        "service": "powerprice-futures-signals",
         "signal_only": True,
         "disclaimer": "This system generates signals only. No live trading execution.",
     }

@@ -1,5 +1,5 @@
 """
-Tests for the CFD cost model.
+Tests for the Futures cost model.
 
 Tests cover:
   - Default configuration values
@@ -23,7 +23,7 @@ from app.api.schemas import CostBreakdown, CostModelConfig
 
 
 # ---------------------------------------------------------------------------
-# Pure cost calculation functions (mirrors routes/cfd.py logic)
+# Pure cost calculation functions (mirrors routes/futures.py logic)
 # ---------------------------------------------------------------------------
 
 
@@ -34,7 +34,7 @@ def compute_cost_breakdown(
     avg_spread_base: float | None = None,
 ) -> CostBreakdown:
     """
-    Compute the full itemised CFD cost breakdown.
+    Compute the full itemised Futures cost breakdown.
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ def compute_cost_breakdown(
         Whether the weekend overnight fee multiplier applies.
     volatility_eur_mwh:
         Current 24-hour price volatility. When > avg_spread_base the spread
-        is scaled by cfd_volatility_spread_multiplier.
+        is scaled by futures_volatility_spread_multiplier.
     avg_spread_base:
         Reference spread level. Defaults to config.avg_spread_eur_mwh.
     """
@@ -54,11 +54,11 @@ def compute_cost_breakdown(
     if avg_spread_base is None:
         avg_spread_base = config.avg_spread_eur_mwh
 
-    vol_multiplier = getattr(settings, "cfd_volatility_spread_multiplier", 1.5)
+    vol_multiplier = getattr(settings, "futures_volatility_spread_multiplier", 1.5)
     if volatility_eur_mwh > avg_spread_base:
         spread_cost = min(
             avg_spread_base * vol_multiplier,
-            getattr(settings, "cfd_max_spread_eur_mwh", 15.0),
+            getattr(settings, "futures_max_spread_eur_mwh", 15.0),
         )
     else:
         spread_cost = avg_spread_base
@@ -101,12 +101,12 @@ def compute_net_edge(
     config: CostModelConfig,
     is_weekend: bool = False,
 ) -> tuple[float, float, float]:
-    """Return (gross_edge, cfd_costs, net_edge)."""
+    """Return (gross_edge, futures_costs, net_edge)."""
     gross_edge = max(0.0, predicted_exit_price - entry_price)
     breakdown = compute_cost_breakdown(config, is_weekend=is_weekend)
-    cfd_costs = breakdown.total_eur_mwh
-    net_edge = gross_edge - cfd_costs
-    return round(gross_edge, 4), round(cfd_costs, 4), round(net_edge, 4)
+    futures_costs = breakdown.total_eur_mwh
+    net_edge = gross_edge - futures_costs
+    return round(gross_edge, 4), round(futures_costs, 4), round(net_edge, 4)
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +280,7 @@ class TestSpreadVolatilityAdjustment:
         breakdown = compute_cost_breakdown(
             config, volatility_eur_mwh=1000.0  # extreme volatility
         )
-        assert breakdown.spread_cost_eur_mwh <= settings.cfd_max_spread_eur_mwh
+        assert breakdown.spread_cost_eur_mwh <= settings.futures_max_spread_eur_mwh
 
     def test_volatility_increases_total_cost(self):
         config = CostModelConfig(avg_spread_eur_mwh=5.0)

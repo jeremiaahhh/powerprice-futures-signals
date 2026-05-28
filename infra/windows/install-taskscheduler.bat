@@ -18,7 +18,7 @@ REM ============================================================
 setlocal EnableDelayedExpansion
 
 REM ---- PATHS (edit these) ----
-set PROJECT_DIR=C:\powerprice-cfd-signals
+set PROJECT_DIR=C:\powerprice-futures-signals
 set BACKEND_DIR=%PROJECT_DIR%\backend
 set VENV_PYTHON=%PROJECT_DIR%\.venv\Scripts\python.exe
 set DATA_DIR=%PROJECT_DIR%\data

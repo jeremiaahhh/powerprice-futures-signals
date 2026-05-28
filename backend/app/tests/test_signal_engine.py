@@ -1,5 +1,5 @@
 """
-Tests for the CFD signal engine logic.
+Tests for the Futures signal engine logic.
 
 Tests cover:
   - Positive price → NO_TRADE
@@ -79,7 +79,7 @@ def _signal_logic(
     is_weekend: bool = False,
 ) -> SignalAction:
     """
-    Pure-function implementation of the signal engine logic used in routes/cfd.py.
+    Pure-function implementation of the signal engine logic used in routes/futures.py.
     Allows testing logic without database or HTTP context.
     """
     if config is None:

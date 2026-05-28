@@ -39,7 +39,7 @@ def _risk_level(score: Optional[float]) -> str:
 
 
 def format_signal(signal: Dict[str, Any]) -> str:
-    """Format a CFD signal for Telegram. SIGNAL ONLY."""
+    """Format a Futures signal for Telegram. SIGNAL ONLY."""
     action = signal.get("action", "UNKNOWN")
     price = signal.get("current_price")
     p_rebound = signal.get("p_rebound")

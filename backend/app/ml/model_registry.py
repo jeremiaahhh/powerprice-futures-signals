@@ -1,5 +1,5 @@
 """
-Thread-safe singleton model registry for the PowerPrice CFD Signals platform.
+Thread-safe singleton model registry for the PowerPrice Futures Signals platform.
 
 Loads trained model artefacts from disk on first access and caches them
 in memory for the lifetime of the process.  All three models

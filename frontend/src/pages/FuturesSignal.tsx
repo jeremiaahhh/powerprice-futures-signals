@@ -52,7 +52,7 @@ function FeatureRow({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function CFDSignal() {
+export default function FuturesSignal() {
   const { signal, history, loading, error, lastRefresh, refresh } = useSignal({
     autoRefresh: true,
     intervalMs: 30000,
@@ -67,7 +67,7 @@ export default function CFDSignal() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-[#e8e8e8] font-mono">CFD Signal</h1>
+          <h1 className="text-lg font-semibold text-[#e8e8e8] font-mono">Futures Signal</h1>
           <p className="text-xs text-[#555555] font-mono mt-0.5">
             Negative-price rebound strategy · German power market
           </p>
